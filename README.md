@@ -32,22 +32,27 @@
 * `FINAL2.db`: Το αρχείο της βάσης δεδομένων SQLite.
 
 ## 🔧 Εγκατάσταση & Εκτέλεση
-
+Για την εγκατάσταση της εφαρμογής μέσω git ακολουθείται η εξής διαδικασία: 
 1.  **Κλωνοποίηση του αποθετηρίου:**
+Άνοιγμα ενός παραθύρου Command Line και πλοήγηση στον φάκελο του υπολογιστή που θα θέλατε να γίνει η εγκατάσταση. Έπειτα, επικόλληση της παρακάτω εντολής:
     ```bash
-    git clone [https://github.com/yourusername/library-management-system.git](https://github.com/yourusername/library-management-system.git)
+    git clone https://github.com/ApostolosMitrelis/Loaning-Libraries-Management-System.git
     ```
-2.  **Μετάβαση στον φάκελο του έργου:**
+3.  **Μετάβαση στον φάκελο του έργου:**
+Έπειτα επικόλληση της παρακάτω εντολής:
     ```bash
-    cd library-management-system
+    cd Loaning-Libraries-Management-System
     ```
-3.  **Εκτέλεση της εφαρμογής:**
+5.  **Εκτέλεση της εφαρμογής:**
+Τέλος, εκτέλεση της παρακάτω εντολής για την εκτέλεση της εφαρμογής
     ```bash
     python controller.py
     ```
-
-## 📸 Στιγμιότυπα (Screenshots)
-**
-
+Εναλλακτικά, για την εγκατάσταση και εκτέλεση της εφαρμογής χωρίς την χρήση του git θα πρέπει να γίνει χειροκίνητη εγκατάσταση των απαραίτητων αρχείων στον υπολογιστή. Από αυτό το repository να γίνει εγκατάσταση των αρχείων:
+1. controller.py
+2. model.py
+3. view.py
+4. Libraries.db
+Μετά την εγκατάσταση αυτών στον ίδιο φάκελο στον υπολογιστή, με τη χρήση ενός editor ή μέσα από το Command Line να γίνει εκτέλεση του αρχείου controller.py
 ## 📜 Άδεια Χρήσης
 [GPL](https://choosealicense.com/licenses/gpl-2.0/)
