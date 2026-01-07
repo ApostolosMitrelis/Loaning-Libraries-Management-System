@@ -14,6 +14,7 @@ class LibraryModel:
     def get_connection(self):
         """Δημιουργία σύνδεσης με τη βάση"""
         conn = sqlite3.connect(self.db_path)
+        conn.execute("PRAGMA foreign_keys = ON;") #NEW
         conn.row_factory = sqlite3.Row
         return conn
 
@@ -23,7 +24,6 @@ class LibraryModel:
         
         try:
             cursor.execute(query, params)
-            
             if commit:
                 conn.commit()
                 result = cursor.rowcount
@@ -644,7 +644,6 @@ class LibraryModel:
                 """, (copy['ISBN'], reservations[0]['Προτεραιότητα']))
             
             #Υπολογισμός ημερομηνιών
-            from datetime import datetime, timedelta
             start_date = datetime.now().strftime('%Y-%m-%d')
             end_date = (datetime.now() + timedelta(days=21)).strftime('%Y-%m-%d')
             interlibrary_loan_id = None
@@ -969,7 +968,6 @@ class LibraryModel:
                    FROM Κατηγορία
                    LEFT JOIN Τεκμήριο ON Κατηγορία.ID_Κατηγορίας = Τεκμήριο.Κατηγορία
                    LEFT JOIN Αντίτυπο ON Τεκμήριο.ISBN = Αντίτυπο.ISBN
-                   LEFT JOIN Δανεισμός ON Αντίτυπο.ID_Αντιτύπου = Δανεισμός.ID_Αντιτύπου
                    GROUP BY Κατηγορία.ID_Κατηγορίας
                    ORDER BY ΣύνολοΑντιτύπων DESC'''
         return self.fetch_all_dict(query, ())
@@ -1041,14 +1039,3 @@ class LibraryModel:
             conn.rollback()
             conn.close()
             return 0    
-
-    def get_active_reservations_for_book(self, isbn: str):
-        """Επιστρέφει ενεργές κρατήσεις για ένα τεκμήριο ταξινομημένες κατά προτεραιότητα"""
-        query = """
-            SELECT κ.*, μ.Όνομα, μ.Επώνυμο
-            FROM Κράτηση κ
-            JOIN Μέλος μ ON κ.ID_Μέλους = μ.ID_Μέλους
-            WHERE κ.ISBN = ? AND κ.Κατάσταση = 'Ενεργή'
-            ORDER BY κ.Προτεραιότητα
-        """
-        return self.fetch_all_dict(query, (isbn,))
