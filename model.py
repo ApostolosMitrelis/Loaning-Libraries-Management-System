@@ -1,6 +1,6 @@
 """
 Database Module για το Library Management System
-Περιέχει όλες τις μεθόδους για αλληλεπίδραση με τη βάση δεδομένων
+Περιέχει όλες τις μεθόδους για αλληλεπίδραση με τη βάση δεδομένων.
 """
 
 import sqlite3
@@ -14,7 +14,7 @@ class LibraryModel:
     def get_connection(self):
         """Δημιουργία σύνδεσης με τη βάση"""
         conn = sqlite3.connect(self.db_path)
-        conn.execute("PRAGMA foreign_keys = ON;") #NEW
+        conn.execute("PRAGMA foreign_keys = ON;")
         conn.row_factory = sqlite3.Row
         return conn
 
@@ -62,7 +62,7 @@ class LibraryModel:
     # ==================== ΜΕΘΟΔΟΙ ΜΕΛΟΥΣ ==================== #
 
     def get_member_by_id(self, member_id: int):
-        """Ανάκτηση στοιχείων μέλους"""
+        """Ανάκτηση στοιχείων μέλους."""
         query = """
             SELECT μ.*, β.Όνομα as Βιβλιοθήκη
             FROM Μέλος as μ
@@ -72,11 +72,9 @@ class LibraryModel:
         return self.fetch_one_dict(query, (member_id,))
 
     def browse_all_books(self, category: str = "Όλες", language: str = "Όλες", libraries: str = "Όλες", search_term: str = ""):
-        """Περιήγηση όλων των τεκμηρίων με φίλτρα"""
+        """Περιήγηση όλων των τεκμηρίων με φίλτρα."""
         query = """
-            SELECT τ.ISBN, τ.Τίτλος, τ.Συγγραφέας, τ.Εκδότης, 
-               τ.Χρονολογία, τ.Γλώσσα, τ.Έκδοση, 
-               COALESCE(κ.Όνομα, 'Χωρίς κατηγορία') as Κατηγορία
+            SELECT τ.ISBN, τ.Τίτλος, τ.Συγγραφέας, τ.Εκδότης, τ.Χρονολογία, τ.Γλώσσα, τ.Έκδοση, COALESCE(κ.Όνομα, 'Χωρίς κατηγορία') as Κατηγορία
             FROM Τεκμήριο τ
             LEFT JOIN Κατηγορία κ ON τ.Κατηγορία = κ.ID_Κατηγορίας
         """
@@ -112,7 +110,7 @@ class LibraryModel:
         return self.fetch_all_dict(query, tuple(params))
 
     def get_book_details(self, isbn: str):
-        """Ανάκτηση πλήρων στοιχείων τεκμηρίου"""
+        """Ανάκτηση όλων των στοιχείων τεκμηρίου."""
         query = """
             SELECT τ.*, κ.Όνομα as Όνομα_Κατηγορίας
             FROM Τεκμήριο τ
@@ -122,7 +120,7 @@ class LibraryModel:
         return self.fetch_one_dict(query, (isbn,))
 
     def search_books(self, search_term: str):
-        """Αναζήτηση βιβλίων"""
+        """Αναζήτηση βιβλίων."""
         query = """
             SELECT DISTINCT τ.*, κ.Όνομα as Κατηγορία
             FROM Τεκμήριο τ
@@ -135,7 +133,7 @@ class LibraryModel:
         return self.fetch_all_dict(query, (search_pattern,) * 3)
 
     def get_available_copies(self, isbn: str, library_id: int = None):
-        """Βρες διαθέσιμα αντίτυπα ενός βιβλίου"""
+        """Βρες διαθέσιμα αντίτυπα ενός βιβλίου."""
         query = """
             SELECT α.*, β.Όνομα as Βιβλιοθήκη
             FROM Αντίτυπο α
@@ -150,16 +148,14 @@ class LibraryModel:
         return self.fetch_all_dict(query, params)
 
     def check_ebook_availability(self, isbn: str):
-        """Έλεγχος αν υπάρχει EBook για το ISBN"""
+        """Έλεγχος αν υπάρχει EBook για το ISBN."""
         result = self.fetch_one_dict("SELECT ID_EBook FROM EBook WHERE ISBN = ?", (isbn,))
         return result['ID_EBook'] if result else None
 
     def create_ebook_loan(self, member_id: int, ebook_id: int):
-        """Δημιουργία δανεισμού EBook"""
-        existing = self.fetch_one_dict(
-            """SELECT ID_Δανεισμού FROM Δανεισμός WHERE ID_Μέλους=? AND ID_EBook=? AND Κατάσταση='Ενεργός'""",
-            (member_id, ebook_id)
-        )
+        """Δημιουργία δανεισμού EBook."""
+        existing = self.fetch_one_dict("""SELECT ID_Δανεισμού FROM Δανεισμός WHERE ID_Μέλους=? AND ID_EBook=? AND Κατάσταση='Ενεργός'""", (member_id, ebook_id))
+
         if existing:
             return (False, "Έχετε ήδη δανειστεί αυτό το EBook!")
         start_date = datetime.now().strftime('%Y-%m-%d')
@@ -172,7 +168,7 @@ class LibraryModel:
         return (True, f"Δανεισμός EBook επιτυχής! Λήξη: {end_date}") if success else (False, msg)
 
     def create_reservation(self, member_id: int, isbn: str):
-        """Δημιουργία κράτησης βιβλίου"""
+        """Δημιουργία κράτησης βιβλίου."""
         
         # Έλεγχος αν υπάρχει ήδη ενεργή κράτηση
         existing = self.fetch_one_dict(
@@ -199,7 +195,7 @@ class LibraryModel:
         return (True, f"Κράτηση δημιουργήθηκε με προτεραιότητα {priority}") if success else (False, message)
 
     def cancel_reservation(self, reservation_id: int):
-        """Ακύρωση κράτησης"""
+        """Ακύρωση κράτησης."""
         # Έλεγχος αν υπάρχει η κράτηση
         result = self.fetch_one_dict(
             "SELECT Κατάσταση FROM Κράτηση WHERE ID_Κράτησης = ?",
@@ -221,8 +217,7 @@ class LibraryModel:
         return (True, "Η κράτηση ακυρώθηκε επιτυχώς") if success else (False, "Σφάλμα κατά την ακύρωση")
 
     def get_member_loans(self, member_id: int):
-        """Ανάκτηση δανεισμών μέλους"""
-        """Ανάκτηση δανεισμών μέλους"""
+        """Ανάκτηση δανεισμών μέλους."""
         query = """
             SELECT δ.ID_Δανεισμού,
                 COALESCE(τ.Τίτλος, τ2.Τίτλος) as Τίτλος,
@@ -245,7 +240,7 @@ class LibraryModel:
         return self.fetch_all_dict(query, (member_id,))
 
     def get_member_fines(self, member_id: int):
-        """Ανάκτηση προστίμων μέλους"""
+        """Ανάκτηση προστίμων μέλους."""
         query = """
             SELECT π.*, τ.Τίτλος, δ.Ημερομηνία_Έναρξης, δ.Ημερομηνία_Λήξης
             FROM Πρόστιμο π
@@ -258,7 +253,7 @@ class LibraryModel:
         return self.fetch_all_dict(query, (member_id,))
 
     def rate_book(self, member_id: int, isbn: str, rating: int, review: str = None):
-        """Αξιολόγηση βιβλίου"""
+        """Αξιολόγηση βιβλίου."""
         today = datetime.now().strftime('%Y-%m-%d')
         success, msg = self.execute_with_commit(
             "INSERT INTO Αξιολόγηση (ID_Μέλους, ISBN, Βαθμολογία, Σχόλια, Ημερομηνία) VALUES (?, ?, ?, ?, ?)",
@@ -266,7 +261,7 @@ class LibraryModel:
         return (True, "Αξιολόγηση καταχωρήθηκε επιτυχώς") if success else (False, "Έχετε ήδη αξιολογήσει αυτό το βιβλίο")
 
     def get_member_reservations(self, member_id: int):
-        """Ανάκτηση κρατήσεων μέλους"""
+        """Ανάκτηση κρατήσεων μέλους."""
         query = """
             SELECT κ.*, τ.Τίτλος, τ.Συγγραφέας
             FROM Κράτηση κ
@@ -277,7 +272,7 @@ class LibraryModel:
         return self.fetch_all_dict( query, (member_id,))
 
     def get_member_loan_history_books(self, member_id: int):
-        """Ανάκτηση βιβλίων που έχει δανειστεί το μέλος (για αξιολόγηση)"""
+        """Ανάκτηση βιβλίων που έχει δανειστεί το μέλος (για αξιολόγηση)."""
         query = """
             SELECT DISTINCT 
             COALESCE(τ1.ISBN, τ2.ISBN) as ISBN, 
@@ -295,7 +290,7 @@ class LibraryModel:
         return self.fetch_all_dict(query, (member_id,))
         
     def get_member_ratings(self, member_id: int):
-        """Ανάκτηση αξιολογήσεων μέλους"""
+        """Ανάκτηση αξιολογήσεων μέλους."""
         query = """
             SELECT α.*, τ.Τίτλος, τ.Συγγραφέας
             FROM Αξιολόγηση α
@@ -306,6 +301,7 @@ class LibraryModel:
         return self.fetch_all_dict(query, (member_id,))
 
     def get_available_spaces(self, library_id: int = None, has_computers: bool = None, has_projector: bool = None, has_board: bool = None, has_ac: bool = None, has_printer: bool = None, has_sockets: bool = None):
+        """Ανάκτηση διαθέσιμων χώρων μελέτης."""
         query = '''SELECT Χώρος_Μελέτης.*, Βιβλιοθήκη.Όνομα as Βιβλιοθήκη
                    FROM Χώρος_Μελέτης
                    JOIN Βιβλιοθήκη ON Χώρος_Μελέτης.ID_Βιβλιοθήκης = Βιβλιοθήκη.ID_Βιβλιοθήκης
@@ -332,6 +328,7 @@ class LibraryModel:
         return self.fetch_all_dict(query, tuple(params))
 
     def check_space_availability(self, space_id: int, date: str, start_time: str):
+        """Έλεγχος διαθεσιμότητας."""
         try:
             fmt = "%H:%M"
             t_start = datetime.strptime(start_time, fmt)
@@ -359,23 +356,8 @@ class LibraryModel:
         
         return result['conflicts'] == 0
 
-        # """Έλεγχος διαθεσιμότητας χώρου για συγκεκριμένη ώρα"""
-        # query = """
-        #     SELECT COUNT(*) as conflicts
-        #     FROM Μέλος_Κάνει_Κράτηση_Χώρου
-        #     WHERE ID_Χώρου = ? AND Ημερομηνία_Κράτησης = ?
-        #     AND (
-        #         (Ώρα_Κράτησης < ? AND Ώρα_Λήξης > ?) OR
-        #         (Ώρα_Κράτησης < ? AND Ώρα_Λήξης > ?) OR
-        #         (Ώρα_Κράτησης >= ? AND Ώρα_Λήξης <= ?)
-        #     )
-        # """
-        # params = (space_id, date, end_time, start_time, end_time, start_time, start_time, end_time)
-        # result = self.fetch_one_dict(query, params)
-        # return result['conflicts'] == 0
-
     def create_space_reservation(self, member_id: int, space_id: int, date: str, time: str):
-        """Δημιουργία κράτησης χώρου"""
+        """Δημιουργία κράτησης χώρου."""
         conn = self.get_connection()
         cursor = conn.cursor()
         
@@ -409,6 +391,7 @@ class LibraryModel:
             return False, f"Σφάλμα: {str(e)}"
 
     def get_member_space_reservations(self, member_id: int):
+        """Ανάκτηση κρατήσεων μέλους για χώρους μελέτης."""
         query = '''SELECT Μέλος_Κάνει_Κράτηση_Χώρου.*, Χώρος_Μελέτης.*, Βιβλιοθήκη.Όνομα as Βιβλιοθήκη
                    FROM Μέλος_Κάνει_Κράτηση_Χώρου
                    JOIN Χώρος_Μελέτης ON Μέλος_Κάνει_Κράτηση_Χώρου.ID_Χώρου = Χώρος_Μελέτης.ID_Χώρου
@@ -418,7 +401,7 @@ class LibraryModel:
         return self.fetch_all_dict(query, (member_id,))
 
     def cancel_space_reservation(self, member_id: int, space_name: str, library_name: str, date: str, time: str):
-        """Διαγραφή κράτησης χώρου με βάση μέλος, χώρο, βιβλιοθήκη και χρόνο"""
+        """Διαγραφή κράτησης χώρου με βάση μέλος, χώρο, βιβλιοθήκη και χρόνο."""
         conn = self.get_connection()
         cursor = conn.cursor()
         
@@ -454,7 +437,7 @@ class LibraryModel:
     # ==================== ΜΕΘΟΔΟΙ ADMIN ==================== #
 
     def get_staff_by_id(self, staff_id: int):
-        """Ανάκτηση στοιχείων προσωπικού"""
+        """Ανάκτηση στοιχείων προσωπικού."""
         query = """
             SELECT π.*, β.Όνομα as Βιβλιοθήκη
             FROM Προσωπικό π
@@ -464,7 +447,7 @@ class LibraryModel:
         return self.fetch_one_dict(query, (staff_id,))
 
     def get_all_copies_for_isbn(self, isbn: str, library_id: int = None):
-        """Όλα τα αντίτυπα (διαθέσιμα και μη) για ένα ISBN"""
+        """Όλα τα αντίτυπα (διαθέσιμα και μη) για ένα ISBN."""
         query = """
             SELECT α.*, β.Όνομα as Βιβλιοθήκη
             FROM Αντίτυπο α
@@ -480,7 +463,7 @@ class LibraryModel:
         return self.fetch_all_dict(query, params)
 
     def add_document(self, isbn: str, title: str, author: str = None, publisher: str = None, year: str = None, language: str = None, category_id: int = None, edition: int = None):
-        """Προσθήκη νέου τεκμηρίου - σύμφωνα με το schema"""
+        """Προσθήκη νέου τεκμηρίου."""
         try:
             # Έλεγχος αν υπάρχει ήδη το ISBN
             existing = self.fetch_one_dict("SELECT ISBN FROM Τεκμήριο WHERE ISBN = ?", (isbn,))
@@ -488,8 +471,7 @@ class LibraryModel:
                 return False, f"Το ISBN {isbn} υπάρχει ήδη"
 
             success, message = self.execute_with_commit("""
-                INSERT INTO Τεκμήριο (ISBN, Τίτλος, Συγγραφέας, Εκδότης, 
-                                      Χρονολογία, Γλώσσα, Κατηγορία, Έκδοση)
+                INSERT INTO Τεκμήριο (ISBN, Τίτλος, Συγγραφέας, Εκδότης, Χρονολογία, Γλώσσα, Κατηγορία, Έκδοση)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """, (isbn, title, author, publisher, year, language, category_id, edition))
             
@@ -501,11 +483,11 @@ class LibraryModel:
             return False, f"Σφάλμα: {str(e)}"
 
     def get_category_by_name(self, category_name: str):
-        """Βρίσκει κατηγορία από όνομα"""
+        """Βρίσκει κατηγορία από όνομα."""
         return self.fetch_one_dict("SELECT * FROM Κατηγορία WHERE Όνομα = ?", (category_name,))
 
     def add_copy(self, isbn: str, library_id: int, condition: str = 'Καλή'):
-        """Προσθήκη αντιτύπου"""
+        """Προσθήκη αντιτύπου."""
         existing = self.fetch_one_dict("SELECT ISBN FROM Τεκμήριο WHERE ISBN = ?", (isbn,))
         if not existing:
             return False, "Το τεκμήριο δεν υπάρχει. Προσθέστε το πρώτα."
@@ -516,7 +498,7 @@ class LibraryModel:
         return (True, "Αντίτυπο προστέθηκε επιτυχώς") if success else (False, msg)
 
     def delete_copy(self, copy_id: int):
-        """Διαγραφή αντιτύπου"""
+        """Διαγραφή αντιτύπου."""
         conn = self.get_connection()
         cursor = conn.cursor()
 
@@ -546,7 +528,7 @@ class LibraryModel:
             return False, f"Σφάλμα: {str(e)}"
 
     def get_all_loans(self, search_term: str = "", status_filter: str = "", library_filter: int = None):
-        """Ανάκτηση όλων των δανεισμών για admin (και φυσικά και EBook)"""
+        """Ανάκτηση όλων των δανεισμών για admin (και φυσικά και EBook)."""
         query = """
         SELECT δ.*, 
                μ.Όνομα || ' ' || μ.Επώνυμο as Μέλος,
@@ -591,8 +573,8 @@ class LibraryModel:
         
         return self.fetch_all_dict(query, tuple(params))
 
-    def create_loan(self, member_id: int, copy_id: int, staff_library_id: int):
-        """Δημιουργία δανεισμού με υποστήριξη διαδανεισμού και κρατήσεων"""
+    def create_loan(self, member_id: int, copy_id: int):
+        """Δημιουργία δανεισμού με υποστήριξη διαδανεισμού και κρατήσεων."""
         #Έλεγχος μέλους
         member = self.fetch_one_dict(
             "SELECT ID_Βιβλιοθήκης FROM Μέλος WHERE ID_Μέλους = ?", 
@@ -680,7 +662,7 @@ class LibraryModel:
             return False, f"Σφάλμα: {str(e)}"
 
     def return_loan(self, loan_id: int):
-        """Επιστροφή δανεισμού"""
+        """Επιστροφή δανεισμού."""
         conn = self.get_connection()
         cursor = conn.cursor()
 
@@ -738,7 +720,7 @@ class LibraryModel:
             return False, f"Σφάλμα: {str(e)}"
 
     def get_all_fines(self, search_term: str = "", status_filter: str = "Όλα"):
-        """Ανάκτηση όλων των προστίμων για admin"""
+        """Ανάκτηση όλων των προστίμων για admin."""
         query = """
         SELECT π.*, 
                μ.ID_Μέλους,
@@ -776,13 +758,13 @@ class LibraryModel:
         return self.fetch_all_dict(query, tuple(params))
 
     def update_fine_status(self, fine_id: int, new_status: str):
-        """Αλλαγή κατάστασης προστίμου"""
+        """Αλλαγή κατάστασης προστίμου."""
         return self.execute_with_commit(
             "UPDATE Πρόστιμο SET Κατάσταση = ? WHERE ID_Προστίμου = ?",
             (new_status, fine_id))
 
-    def impose_fine(self, loan_id: int, amount: float, reason: str = None):
-        """Επιβολή προστίμου"""
+    def impose_fine(self, loan_id: int, amount: float):
+        """Επιβολή προστίμου."""
         conn = self.get_connection()
         cursor = conn.cursor()
 
@@ -802,23 +784,27 @@ class LibraryModel:
             return False, f"Σφάλμα: {str(e)}"
 
     def get_categories(self):
+        """Ανάκτηση των στοιχείων των κατηγοριών."""
         return self.fetch_all_dict("SELECT * FROM Κατηγορία ORDER BY Όνομα", ())
 
     # ==================== ΒΙΒΛΙΟΘΗΚΕΣ   ==================== #
 
     def get_all_libraries(self):
+        """Ανάκτηση των στοιχείων των βιβλιοθηκών."""
         return self.fetch_all_dict("SELECT * FROM Βιβλιοθήκη ORDER BY Όνομα", ())
 
     def get_libraries_type(self):
+        """Ανάκτηση όλων των διαφορετικών τύπων βιβλιοθηκών."""
         res = self.fetch_all_dict("SELECT DISTINCT Είδος_Βιβλιοθήκης FROM Βιβλιοθήκη ORDER BY Όνομα", ())
         return [r['Είδος_Βιβλιοθήκης'] for r in res]
     
     def get_distinct_cities(self):
+        """Ανάκτηση όλων των διαφορετικών πόλεων των βιβλιοθηκών."""
         res = self.fetch_all_dict("SELECT DISTINCT Πόλη FROM Βιβλιοθήκη WHERE Πόλη IS NOT NULL ORDER BY Πόλη")
         return [r['Πόλη'] for r in res]
 
     def browse_all_libraries(self, types: str = "Όλες", cities: str = "Όλες", couriers: str = "Όλοι", search_term: str = ""):
-        """Περιήγηση όλων των βιβλιοθηκών με φίλτρα"""
+        """Περιήγηση όλων των βιβλιοθηκών με φίλτρα."""
         query = """
             SELECT β.ID_Βιβλιοθήκης, β.Όνομα, β.Οδός, β.Αριθμός, β.Πόλη, β.Είδος_Βιβλιοθήκης, μ.Όνομα_Εταιρείας as Μεταφορέας
             FROM Βιβλιοθήκη β
@@ -850,29 +836,34 @@ class LibraryModel:
         return self.fetch_all_dict(query, tuple(params))
 
     def add_library(self, data: dict):
+        """Προσθήκη βιβλιοθήκης."""
         return self.execute_with_commit(
             "INSERT INTO Βιβλιοθήκη (Όνομα, Οδός, Αριθμός, Πόλη, Είδος_Βιβλιοθήκης, ID_Μεταφορέα) VALUES (?, ?, ?, ?, ?, ?)",
             (data['Όνομα'], data['Οδός'], data['Αριθμός'], data['Πόλη'], data['Είδος'], data['ID_Μεταφορέα'])
         )
 
     def update_library(self, lib_id: int, data: dict):
+        """Ανανέωση στοιχείων βιβλιοθήκης."""
         return self.execute_with_commit(
             "UPDATE Βιβλιοθήκη SET Όνομα=?, Οδός=?, Αριθμός=?, Πόλη=?, Είδος_Βιβλιοθήκης=?, ID_Μεταφορέα=? WHERE ID_Βιβλιοθήκης=?",
             (data['Όνομα'], data['Οδός'], data['Αριθμός'], data['Πόλη'], data['Είδος'], data['ID_Μεταφορέα'], lib_id)
         )
 
     def delete_library(self, lib_id: int):
+        """Διαγραφή βιβλιοθήκης."""
         # Έλεγχος συσχετίσεων
         if self.fetch_one_dict("SELECT 1 FROM Αντίτυπο WHERE ID_Βιβλιοθήκης = ?", (lib_id,)):
             return False, "Η βιβλιοθήκη έχει αντίτυπα και δεν μπορεί να διαγραφεί."
         return self.execute_with_commit("DELETE FROM Βιβλιοθήκη WHERE ID_Βιβλιοθήκης = ?", (lib_id,))
     
     def get_couriers(self):
+        """Ανάκτηση όλων των στοιχείων των μεταφορέων."""
         return self.fetch_all_dict("SELECT * FROM Μεταφορέας")
 
 # ==================== ΔΙΑΧΕΙΡΙΣΗ ΜΕΛΩΝ ==================== #
 
     def browse_members(self, search_term=""):
+        """Ανάκτηση στοιχείων των Μελών με βάση το Όνομα, το Επώνυμο ή το email."""
         query = """
             SELECT μ.*, β.Όνομα as Βιβλιοθήκη
             FROM Μέλος μ
@@ -883,23 +874,27 @@ class LibraryModel:
         return self.fetch_all_dict(query, (term, term, term))
 
     def add_member(self, data: dict):
+        """Προσθήκη καινούργιου Μέλους."""
         return self.execute_with_commit(
             "INSERT INTO Μέλος (Όνομα, Επώνυμο, Email, Τηλέφωνο, Ημερομηνία_Εγγραφής, ID_Βιβλιοθήκης, Οδός, Αριθμός, Πόλη, Κατάσταση_Μέλους) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (data['Όνομα'], data['Επώνυμο'], data['Email'], data['Τηλέφωνο'], data['Ημ_Εγγραφής'], data['ID_Βιβλιοθήκης'], data['Οδός'], data['Αριθμός'], data['Πόλη'], data['Κατάσταση'])
         )
 
     def update_member(self, member_id: int, data: dict):
+        """Ανανέωση στοιχείων Μέλους."""
         return self.execute_with_commit(
             "UPDATE Μέλος SET Όνομα=?, Επώνυμο=?, Email=?, Τηλέφωνο=?, Ημερομηνία_Εγγραφής=?, ID_Βιβλιοθήκης=?, Οδός=?, Αριθμός=?, Πόλη=?, Κατάσταση_Μέλους=? WHERE ID_Μέλους=?",
             (data['Όνομα'], data['Επώνυμο'], data['Email'], data['Τηλέφωνο'], data['Ημ_Εγγραφής'], data['ID_Βιβλιοθήκης'], data['Οδός'], data['Αριθμός'], data['Πόλη'], data['Κατάσταση'], member_id)
         )
 
     def delete_member(self, member_id: int):
+        """Διαγραφή Μέλους."""
         return self.execute_with_commit("DELETE FROM Μέλος WHERE ID_Μέλους = ?", (member_id,))
 
     # ==================== ΔΙΑΧΕΙΡΙΣΗ ΠΡΟΣΩΠΙΚΟΥ ==================== #
 
     def browse_staff(self, search_term=""):
+        """Ανάκτηση στοιχείων προσωπικού με βάση το Όνομα ή το Επώνυμο."""
         query = """
             SELECT π.*, β.Όνομα as Βιβλιοθήκη
             FROM Προσωπικό π
@@ -910,6 +905,7 @@ class LibraryModel:
         return self.fetch_all_dict(query, (term, term))
 
     def add_staff(self, data: dict):
+        """Προσθήκη Προσωπικού."""
         return self.execute_with_commit(
             """INSERT INTO Προσωπικό 
                (Όνομα, Επώνυμο, ID_Βιβλιοθήκης, Κατάσταση, Θέση, Τηλέφωνο, Email, ΑΦΜ, Διεύθυνση, Ημερομηνία_Πρόσληψης, Μισθός) 
@@ -920,6 +916,7 @@ class LibraryModel:
         )
 
     def update_staff(self, staff_id: int, data: dict):
+        """Ανανέωση στοιχείων Προσωπικού."""
         return self.execute_with_commit(
             """UPDATE Προσωπικό 
                SET Όνομα=?, Επώνυμο=?, ID_Βιβλιοθήκης=?, Κατάσταση=?, Θέση=?, 
@@ -931,11 +928,13 @@ class LibraryModel:
         )
 
     def delete_staff(self, staff_id: int):
+        """Διαγραφή Προσωπικού."""
         return self.execute_with_commit("DELETE FROM Προσωπικό WHERE ID_Προσωπικού = ?", (staff_id,))
 
     # ==================== STATISTICS ==================== #
 
     def get_popular_books(self, limit: int = 10):
+        """Ανάκτηση των δημοφιλέστερων τεκμηρίων με βάση το σύνολο των δανεισμών."""
         query = '''SELECT Τεκμήριο.ISBN, Τεκμήριο.Τίτλος, Τεκμήριο.Συγγραφέας,
                           COUNT(Δανεισμός.ID_Δανεισμού) as ΣυνολικοίΔανεισμοί,
                           COALESCE(AVG(Αξιολόγηση.Βαθμολογία), 0) as ΜέσηΑξιολόγηση,
@@ -950,6 +949,7 @@ class LibraryModel:
         return self.fetch_all_dict(query, (limit,))
 
     def get_top_rated_books(self, limit: int = 10):
+        """Ανάκτηση των δημοφιλέστερων τεκμηρίων με βάση την αξιολόγηση."""
         query = '''SELECT Τεκμήριο.ISBN, Τεκμήριο.Τίτλος, Τεκμήριο.Συγγραφέας,
                           AVG(Αξιολόγηση.Βαθμολογία) as ΜέσηΑξιολόγηση,
                           COUNT(Αξιολόγηση.ID_Μέλους) as ΑριθμόςΑξιολογήσεων
@@ -962,6 +962,7 @@ class LibraryModel:
         return self.fetch_all_dict(query, (limit,))
 
     def get_category_statistics(self):
+        """Ανάκτηση των δημοφιλέστερων κατηγοριών με βάση των αριθμό των τεκμηρίων."""
         query = '''SELECT Κατηγορία.Όνομα as Κατηγορία,
                           COUNT(DISTINCT Τεκμήριο.ISBN) as ΑριθμόςΤεκμηρίων,
                           COUNT(Αντίτυπο.ID_Αντιτύπου) as ΣύνολοΑντιτύπων
@@ -975,7 +976,7 @@ class LibraryModel:
     # ==================== GENERAL ==================== #
 
     def calculate_overdue_fines(self):
-        """Υπολογισμός και δημιουργία προστίμων για εκπρόθεσμους δανεισμούς"""
+        """Υπολογισμός και δημιουργία προστίμων για εκπρόθεσμους δανεισμούς."""
         conn = self.get_connection()
         cursor = conn.cursor()
         

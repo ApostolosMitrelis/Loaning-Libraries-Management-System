@@ -1,3 +1,8 @@
+"""
+GUI Module για το Library Management System
+Περιέχει όλες τις μεθόδους για την δημιουργία των γραφικών και την αλληλεπίδραση με τον χρήστη.
+"""
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime, timedelta
@@ -13,12 +18,12 @@ class LibraryView:
         style.configure("Treeview", rowheight=25)
 
     def clear_window(self):
-        """Removes all widgets from the root."""
+        """Αφαίρεση όλων των widget από την οθόνη."""
         for widget in self.root.winfo_children():
             widget.destroy()
 
     def create_treeview(self, parent, columns, widths=None, height=None):
-        """Helper to create standard treeviews."""
+        """Βοηθητική συνάρτηση για δημιουγία treeviews."""
         frame = ttk.Frame(parent)
         frame.pack(fill='both', expand=True, pady=10)
         
@@ -34,12 +39,15 @@ class LibraryView:
                 tree.column(col, width=widths[i])
         
         tree.pack(fill='both', expand=True)
-        return tree, frame
+
+        return tree
 
     # ================= LOGIN ================= #
     
     def show_main_login(self, on_member_click, on_admin_click):
+        """Δημιουργία αρχικού μενού login."""
         self.clear_window()
+
         frame = ttk.Frame(self.root, padding="50")
         frame.place(relx=0.5, rely=0.5, anchor="center")
 
@@ -50,7 +58,9 @@ class LibraryView:
         ttk.Button(frame, text="Διαχειριστής", width=20, command=on_admin_click).pack(pady=10)
 
     def show_specific_login(self, title, label_text, on_login_submit, on_back):
+        """Δημιουργία συγκεκριμένου login για το Μέλος ή τον Admin."""
         self.clear_window()
+
         frame = ttk.Frame(self.root, padding="50")
         frame.place(relx=0.5, rely=0.5, anchor="center")
 
@@ -66,7 +76,7 @@ class LibraryView:
     # ================= DASHBOARDS ================= #
 
     def show_dashboard_layout(self, user_name, user_info_text, menu_buttons, on_logout):
-        """Generic dashboard builder used by both Member and Staff."""
+        """Δημιουργία dashboard που χρησιμοποιείται και από το Μέλος και από τον Admin."""
         self.clear_window()
         
         header = ttk.Frame(self.root, padding="10")
@@ -92,6 +102,7 @@ class LibraryView:
         """Καθαρισμός της περιοχής κάτω από το μενού."""
         for widget in self.content_frame.winfo_children():
             widget.destroy()
+
         return self.content_frame
 
     # ================= ΠΕΡΙΗΓΗΣΗ/ΔΙΑΧΕΙΡΙΣΗ ΤΕΚΜΗΡΙΩΝ ================= #
@@ -124,13 +135,13 @@ class LibraryView:
                    
         return frame
     
-    def build_details_button_frame(self, parent, user_type, on_details_click, on_add_click, on_management_click, on_update_click):   
+    def build_details_button_frame(self, parent, user_type, on_details_click, on_add_click, on_management_click):
+        """Δημιουργία frame για τα κουμπιά του Μέλους και του Admin."""
         frame = ttk.Frame(parent)
         frame.pack(fill="x", pady=1)
 
         if user_type == "admin":
             ttk.Button(frame, text="Διαχείριση Επιλεγμένου Τεκμηρίου", command=on_management_click).pack(padx=5)
-            ttk.Button(frame, text="Τροποποίση Επιλεγμένου Τεκμηρίου", command=on_update_click).pack(padx=5)
             ttk.Button(frame, text="Προσθήκη Νέου Τεκμηρίου", command=on_add_click).pack(padx=5)
         else:
             ttk.Button(frame, text="Προβολή Λεπτομερειών & Κράτηση", command=on_details_click).pack(padx=5)
@@ -147,12 +158,12 @@ class LibraryView:
         if book_info:
             ttk.Label(info_frame, text=book_info['Τίτλος'], font=("Arial", 14, "bold")).pack(pady=5)
             ttk.Label(info_frame, text=f"ISBN: {book_info['ISBN']}", font=("Arial", 10)).pack(pady=2)
-            ttk.Label(info_frame, text=f"Συγγραφέας: {book_info['Συγγραφέας'] or '-'}", font=("Arial", 10)).pack(pady=2)
+            ttk.Label(info_frame, text=f"Συγγραφέας: {book_info['Συγγραφέας']}", font=("Arial", 10)).pack(pady=2)
             ttk.Label(info_frame, text=f"Κατηγορία: {book_info['Όνομα_Κατηγορίας']}", font=("Arial", 10)).pack(pady=2)
             ttk.Label(info_frame, text=f"Έκδοση: {book_info['Έκδοση']}", font=("Arial", 10)).pack(pady=2)
-            ttk.Label(info_frame, text=f"Εκδότης: {book_info['Εκδότης'] or '-'}", font=("Arial", 10)).pack(pady=2)
-            ttk.Label(info_frame, text=f"Έτος: {book_info['Χρονολογία'] or '-'}", font=("Arial", 10)).pack(pady=2)
-            ttk.Label(info_frame, text=f"Γλώσσα: {book_info['Γλώσσα'] or '-'}", font=("Arial", 10)).pack(pady=2)
+            ttk.Label(info_frame, text=f"Εκδότης: {book_info['Εκδότης']}", font=("Arial", 10)).pack(pady=2)
+            ttk.Label(info_frame, text=f"Έτος: {book_info['Χρονολογία']}", font=("Arial", 10)).pack(pady=2)
+            ttk.Label(info_frame, text=f"Γλώσσα: {book_info['Γλώσσα']}", font=("Arial", 10)).pack(pady=2)
 
         ttk.Separator(info_frame, orient="horizontal").pack(fill="x", pady=10)
 
@@ -173,67 +184,10 @@ class LibraryView:
 
         ttk.Button(info_frame, text="Κράτηση Βιβλίου", command=on_reservation_click).pack(pady=15)    
         if on_ebook_loan:
-                ttk.Button(info_frame, text="Δανεισμός eBook", command=on_ebook_loan).pack(pady=5)
-
-    def build_modify_book_window(self, parent, book_data, all_categories, on_save):
-        popup = tk.Toplevel(parent)
-        popup.title(f"Επεξεργασία: {book_data.get('Τίτλος')}")
-        popup.geometry("500x600")
-
-        frame = ttk.Frame(popup, padding="20")
-        frame.pack(fill="both", expand=True)
-
-        entries = {}
-
-        ttk.Label(frame, text="ISBN (Δεν αλλάζει):").pack(anchor="w")
-        isbn_entry = ttk.Entry(frame, width=40)
-        isbn_entry.insert(0, book_data.get('ISBN', ''))
-        isbn_entry.config(state="readonly")
-        isbn_entry.pack(fill="x", pady=(0, 10))
-        entries['ISBN'] = isbn_entry
-
-        ttk.Label(frame, text="Τίτλος:").pack(anchor="w")
-        title_entry = ttk.Entry(frame, width=40)
-        title_entry.insert(0, book_data.get('Τίτλος', ''))
-        title_entry.pack(fill="x", pady=(0, 10))
-        entries['Τίτλος'] = title_entry
-
-        ttk.Label(frame, text="Συγγραφέας:").pack(anchor="w")
-        auth_entry = ttk.Entry(frame, width=40)
-        auth_entry.insert(0, book_data.get('Συγγραφέας', ''))
-        auth_entry.pack(fill="x", pady=(0, 10))
-        entries['Συγγραφέας'] = auth_entry
-
-        ttk.Label(frame, text="Κατηγορία:").pack(anchor="w")
-        cat_combo = ttk.Combobox(frame, values=all_categories, state="readonly")
-        if book_data.get('Όνομα_Κατηγορίας') in all_categories:
-            cat_combo.set(book_data.get('Όνομα_Κατηγορίας'))
-        elif all_categories:
-            cat_combo.current(0)
-        cat_combo.pack(fill="x", pady=(0, 10))
-        entries['Κατηγορία'] = cat_combo
-
-        ttk.Label(frame, text="Εκδότης:").pack(anchor="w")
-        pub_entry = ttk.Entry(frame, width=40)
-        pub_entry.insert(0, book_data.get('Εκδότης', ''))
-        pub_entry.pack(fill="x", pady=(0, 10))
-        entries['Εκδότης'] = pub_entry
-
-        ttk.Label(frame, text="Έτος Έκδοσης:").pack(anchor="w")
-        year_entry = ttk.Entry(frame, width=40)
-        year_entry.insert(0, str(book_data.get('Χρονολογία', '')))
-        year_entry.pack(fill="x", pady=(0, 10))
-        entries['Χρονολογία'] = year_entry
-        
-        ttk.Label(frame, text="Γλώσσα:").pack(anchor="w")
-        lang_entry = ttk.Entry(frame, width=40)
-        lang_entry.insert(0, book_data.get('Γλώσσα', ''))
-        lang_entry.pack(fill="x", pady=(0, 10))
-        entries['Γλώσσα'] = lang_entry
-
-        ttk.Button(frame, text="Αποθήκευση Αλλαγών", command=lambda: on_save(popup, entries)).pack(pady=20)
+            ttk.Button(info_frame, text="Δανεισμός eBook", command=on_ebook_loan).pack(pady=5)
 
     def build_add_book_frame(self, parent, category_names, on_back, on_add):
+        """Δημιουργία frame για την προσθήκη καινούργιου τεκμηρίου."""
         ttk.Label(parent, text="Προσθήκη Νέου Τεκμηρίου", font=("Arial", 14, "bold")).pack(pady=10)
         
         ttk.Button(parent, text="Πίσω", command=on_back, width=15).pack(pady=5, anchor='w', padx=20)
@@ -243,8 +197,8 @@ class LibraryView:
         formframe.pack(padx=50, pady=20)
 
         fields = [
-            ("ISBN *", None),
-            ("Τίτλος *", None),
+            ("ISBN", None),
+            ("Τίτλος", None),
             ("Συγγραφέας", None),
             ("Εκδότης", None),
             ("Χρονολογία", "π.χ. 2024"),
@@ -256,7 +210,7 @@ class LibraryView:
             ttk.Label(formframe, text=label).grid(row=i, column=0, sticky='w', padx=5, pady=5)
             entry = ttk.Entry(formframe, width=35)
             entry.grid(row=i, column=1, padx=5, pady=5)
-            entries[label.replace(" *", "")] = entry
+            entries[label] = entry
             if hint:
                 ttk.Label(formframe, text=hint, font=("Arial", 8), foreground="gray").grid(row=i, column=2, sticky='w', padx=5)
         
@@ -269,11 +223,9 @@ class LibraryView:
         ttk.Label(formframe, text="Γλώσσα").grid(row=len(fields)+1, column=0, sticky='w', padx=5, pady=5)
         language_var = tk.StringVar()
         ttk.Combobox(formframe, textvariable=language_var, 
-                     values=["", "Ελληνικά", "Αγγλικά", "Γαλλικά", "Γερμανικά"], 
+                     values=["Ελληνικά", "Αγγλικά", "Γαλλικά", "Γερμανικά"], 
                      state='readonly', width=33).grid(row=len(fields)+1, column=1, padx=5, pady=5)
         
-        ttk.Label(formframe, text="* Υποχρεωτικά πεδία", font=("Arial", 8, "italic"), foreground="red").grid(row=len(fields)+2, column=0, columnspan=3, pady=10)
-
         button_frame = ttk.Frame(formframe)
         button_frame.grid(row=len(fields)+3, column=0, columnspan=3, pady=20)
             
@@ -282,11 +234,12 @@ class LibraryView:
         return entries, category_var, language_var
     
     def build_document_management_window(self, parent, title, isbn, lib_names, on_add_click, on_delete_click):
+        """Δημιουργία παραθύρου για την διαχείριση τεκμηρίων."""
         mgmt_window = tk.Toplevel(parent)
         mgmt_window.title(f"Διαχείριση: {title}")
         mgmt_window.geometry("700x500")
         
-        ttk.Label(mgmt_window, text=f"{title}", font=("Arial", 14, "bold")).pack(pady=10)
+        ttk.Label(mgmt_window, text=title, font=("Arial", 14, "bold")).pack(pady=10)
         ttk.Label(mgmt_window, text=f"ISBN: {isbn}", font=("Arial", 10)).pack(pady=5)
 
         ttk.Label(mgmt_window, text="Βιβλιοθήκη:").pack(pady=10)
@@ -299,7 +252,6 @@ class LibraryView:
         condition_combo = ttk.Combobox(mgmt_window, textvariable=condition_var, values=["Άριστη", "Καλή", "Μέτρια", "Φθαρμένη"], state="readonly", width=25)
         condition_combo.pack(padx=5)
 
-        # Λίστα αντιτύπων
         ttk.Label(mgmt_window, text="Αντίτυπα:", font=("Arial", 11, "bold")).pack(pady=10)
 
         # Κουμπιά ενεργειών
@@ -307,7 +259,6 @@ class LibraryView:
         button_frame.pack(pady=10)
         
         ttk.Button(button_frame, text="Προσθήκη Αντιτύπου", command=lambda: on_add_click(isbn, selected_lib.get(), condition_var.get())).pack(side="left", padx=5)
-        
         ttk.Button(button_frame, text="Διαγραφή Επιλεγμένου", command=on_delete_click).pack(side="left", padx=5)
 
         return mgmt_window
@@ -315,6 +266,7 @@ class LibraryView:
     # ================= ΔΑΝΕΙΣΜΟΙ ================= #
 
     def build_loans_frame(self, parent, loans):
+        """Δημιουργία frame για τους δανεισμούς του Μέλους."""
         tk.Label(parent, text="Οι Δανεισμοί μου", font=("Arial", 14, "bold")).pack(pady=10)
 
         if not loans:
@@ -343,14 +295,8 @@ class LibraryView:
         status_combo.grid(row=0, column=3, padx=5, pady=5)
         
         # Κουμπιά
-        ttk.Button(filter_frame, text="Αναζήτηση", 
-                  command=lambda: on_search(search_entry.get(), status_var.get())).grid(row=0, column=4, padx=5)
-        ttk.Button(filter_frame, text="Νέος Δανεισμός", 
-                  command=on_new_loan).grid(row=0, column=5, padx=5)
-        
-        # Info text
-        info_text = "Πληροφορίες: Διπλό κλικ σε δανεισμό για λεπτομέρειες. Επιλέξτε και πατήστε 'Επιστροφή' για να επιστρέψετε βιβλίο."
-        ttk.Label(parent, text=info_text, font=("Arial", 9), foreground="gray").pack(pady=5)
+        ttk.Button(filter_frame, text="Αναζήτηση", command=lambda: on_search(search_entry.get(), status_var.get())).grid(row=0, column=4, padx=5)
+        ttk.Button(filter_frame, text="Νέος Δανεισμός", command=on_new_loan).grid(row=0, column=5, padx=5)
         
         # Κουμπί επιστροφής
         action_frame = ttk.Frame(parent)
@@ -359,17 +305,16 @@ class LibraryView:
         
         return search_entry, status_var
 
-    def build_new_loan_form(self, parent, libraries, on_search_member, on_search_copy, on_create_loan, on_cancel):
+    def build_new_loan_form(self, parent, on_search_member, on_search_copy, on_create_loan):
         """Popup για δημιουργία νέου δανεισμού"""
         popup = tk.Toplevel(parent)
         popup.title("Νέος Δανεισμός")
-        popup.geometry("800x750")
+        popup.geometry("800x800")
         
         main_frame = ttk.Frame(popup, padding="20")
         main_frame.pack(fill="both", expand=True)
         
-        ttk.Label(main_frame, text="Δημιουργία Νέου Δανεισμού", 
-                 font=("Arial", 14, "bold")).pack(pady=10)
+        ttk.Label(main_frame, text="Δημιουργία Νέου Δανεισμού", font=("Arial", 14, "bold")).pack(pady=10)
         
         member_frame = ttk.LabelFrame(main_frame, text="Επιλογή Μέλους", padding="10")
         member_frame.pack(fill="x", pady=10)
@@ -381,8 +326,7 @@ class LibraryView:
         member_id_entry = ttk.Entry(search_member_frame, width=15)
         member_id_entry.pack(side="left", padx=5)
         
-        ttk.Button(search_member_frame, text="Αναζήτηση Μέλους", 
-                  command=lambda: on_search_member(member_id_entry)).pack(side="left", padx=5)
+        ttk.Button(search_member_frame, text="Αναζήτηση Μέλους", command=lambda: on_search_member(member_id_entry)).pack(side="left", padx=5)
         
         member_info_label = ttk.Label(member_frame, text="", foreground="blue", font=("Arial", 10))
         member_info_label.pack(anchor="w", padx=5, pady=5)
@@ -397,8 +341,7 @@ class LibraryView:
         search_entry = ttk.Entry(search_frame, width=40)
         search_entry.pack(side="left", padx=5)
         
-        ttk.Button(search_frame, text="Αναζήτηση", 
-                  command=lambda: on_search_copy(search_entry.get())).pack(side="left", padx=5)
+        ttk.Button(search_frame, text="Αναζήτηση", command=lambda: on_search_copy(search_entry.get())).pack(side="left", padx=5)
         
         columns = ["ID", "ISBN", "Τίτλος", "Βιβλιοθήκη", "Κατάσταση"]
         copy_tree, _ = self.create_treeview(copy_frame, columns, widths=[60, 100, 250, 150, 100], height=8)
@@ -406,22 +349,20 @@ class LibraryView:
         warning_frame = ttk.LabelFrame(main_frame, text="Ειδοποιήσεις", padding="10")
         warning_frame.pack(fill="x", pady=10)
         
-        warning_label = ttk.Label(warning_frame, text="Επιλέξτε αντίτυπο για να δείτε πληροφορίες...", 
-                                 foreground="gray", font=("Arial", 10), wraplength=700, justify="left")
+        warning_label = ttk.Label(warning_frame, text="Επιλέξτε αντίτυπο για να δείτε πληροφορίες...", foreground="gray", font=("Arial", 10), wraplength=700, justify="left")
         warning_label.pack(anchor="w", padx=5, pady=5)
         
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(pady=20)
         
-        ttk.Button(button_frame, text="Δημιουργία Δανεισμού", 
-                  command=lambda: on_create_loan(popup, member_id_entry, copy_tree)).pack(side="left", padx=10)
-        ttk.Button(button_frame, text="Ακύρωση", command=lambda: popup.destroy()).pack(side="left", padx=10)
-        
+        ttk.Button(button_frame, text="Δημιουργία Δανεισμού", command=lambda: on_create_loan(popup, copy_tree)).pack(side="left", padx=10)
+
         return popup, member_info_label, copy_tree, warning_label
 
     # ================= ΚΡΑΤΗΣΕΙΣ ================= #
 
     def build_reservations_frame(self, parent, reservations, on_cancel_reservation):
+        """Δημιουργία frame για την προβολή των κρατήσεων Μέλους."""
         ttk.Label(parent, text="Οι Κρατήσεις μου", font=("Arial", 14, "bold")).pack(pady=10)
 
         if not reservations:
@@ -439,6 +380,7 @@ class LibraryView:
     # ================= ΠΡΟΣΤΙΜΑ ================= #
 
     def build_fines_frame(self, parent, fines):
+        """Δημιουργία frame για την προβολή των προστίμων Μέλους."""
         ttk.Label(parent, text="Τα Πρόστιμά μου", font=("Arial", 14, "bold")).pack(pady=10)
 
         if not fines:
@@ -454,9 +396,8 @@ class LibraryView:
             ttk.Label(parent, text=text, font=("Arial", 10)).pack(anchor="w", padx=20, pady=5)
 
     def build_fine_management_frame(self, parent, on_search, on_impose, on_update_status):
-        """Frame για διαχείριση προστίμων"""
-        ttk.Label(parent, text="Διαχείριση Προστίμων", 
-                 font=("Arial", 14, "bold")).pack(pady=10)
+        """Frame για διαχείριση προστίμων."""
+        ttk.Label(parent, text="Διαχείριση Προστίμων", font=("Arial", 14, "bold")).pack(pady=10)
         
         # Φίλτρα
         filter_frame = ttk.Frame(parent)
@@ -473,8 +414,7 @@ class LibraryView:
                                     width=15, state="readonly")
         status_combo.pack(side="left", padx=5)
         
-        ttk.Button(filter_frame, text="Αναζήτηση",
-                  command=lambda: on_search(search_entry.get(), status_var.get())).pack(side="left", padx=5)
+        ttk.Button(filter_frame, text="Αναζήτηση", command=lambda: on_search(search_entry.get(), status_var.get())).pack(side="left", padx=5)
         
         # Κουμπιά ενεργειών
         action_frame = ttk.Frame(parent)
@@ -488,6 +428,7 @@ class LibraryView:
     # ================= ΑΞΙΟΛΟΓΗΣΕΙΣ ================= #
 
     def build_reviews_frame(self, parent, reviews, on_details):
+        """Δημιουργία frame για αξιολογήσεις Μέλους."""
         ttk.Label(parent, text="Οι Αξιολογήσεις μου", font=("Arial", 14, "bold")).pack(pady=10)
 
         if not reviews:
@@ -508,6 +449,7 @@ class LibraryView:
         return details_text
 
     def build_review_details_frame(self, rating_data, details_text):
+        """Δημιουργία frame για λεπτομέρειες αξιολόγησης Μέλους."""
         if rating_data:
             details_text.config(state="normal")
             details_text.delete("1.0", tk.END)
@@ -519,6 +461,7 @@ class LibraryView:
     # ================= ΑΞΙΟΛΟΓΗΣΗ ΒΙΒΛΙΟΥ ================= #
 
     def build_book_rating_frame(self, parent, books, on_submit):
+        """Δημιουργία frame για καινούργια αξιολόγηση τεκμηρίου."""
         ttk.Label(parent, text="Αξιολόγηση Βιβλίου", font=("Arial", 14, "bold")).pack(pady=10)
 
         if not books:
@@ -572,6 +515,7 @@ class LibraryView:
     # ================= ΚΡΑΤΗΣΗ ΧΩΡΟΥ ================= #
 
     def build_space_reservation_frame(self, parent, on_search, on_reservation, on_cancel):
+        """Δημιουργία frame για νέα κράτηση και ιστορικό κρατήσεων."""
         ttk.Label(parent, text="Κράτηση Χώρου Μελέτης", font=("Arial", 14, "bold")).pack(pady=10)
         
         # Tabs
@@ -630,6 +574,7 @@ class LibraryView:
     # ================ ΣΤΑΤΙΣΤΙΚΑ ================= #
 
     def build_statistics_frame(self, parent, popular_books, top_rated, categories):
+        """Δημιουργία frame για εμφάνιση στατιστικών στο Μέλος."""
         ttk.Label(parent, text="Στατιστικά Βιβλιοθήκης", font=("Arial", 14, "bold")).pack(pady=10)
         
         # Notebook για tabs
@@ -699,7 +644,7 @@ class LibraryView:
         return frame
 
     def build_library_form(self, parent, library_data, couriers, lib_types, on_save):  
-        """Φόρμα προσθήκης/επεξεργασίας Βιβλιοθήκης"""
+        """Φόρμα προσθήκης/επεξεργασίας Βιβλιοθήκης."""
         popup = tk.Toplevel(parent)
         popup.title("Στοιχεία Βιβλιοθήκης")
         popup.geometry("400x450")
@@ -742,7 +687,7 @@ class LibraryView:
     # ================ ΜΕΛΗ ================= #
 
     def build_member_form(self, parent, member_data, libraries, on_save):
-        """Φόρμα μέλους"""
+        """Φόρμα μέλους."""
         popup = tk.Toplevel(parent)
         popup.title("Στοιχεία Μέλους")
         popup.geometry("400x500")
@@ -795,7 +740,7 @@ class LibraryView:
     # ================ ΠΡΟΣΩΠΙΚΟ ================= #
 
     def build_staff_form(self, parent, staff_data, libraries, on_save):
-        """Φόρμα προσωπικού"""
+        """Φόρμα προσωπικού."""
         popup = tk.Toplevel(parent)
         popup.title("Στοιχεία Προσωπικού")
         popup.geometry("400x450")
@@ -855,6 +800,7 @@ class LibraryView:
         ttk.Button(frame, text="Αποθήκευση", command=lambda: on_save(popup, entries)).grid(row=12, column=0, columnspan=2, pady=20)
 
     def build_generic_filter_frame(self, parent, title, on_search, on_add, on_edit, on_delete):
+        """Δημιουργία κοινού frame για Μέλος/Προσωπικό."""
         ttk.Label(parent, text=title, font=("Arial", 14, "bold")).pack(pady=10)
         frame = ttk.LabelFrame(parent, text="Ενέργειες & Αναζήτηση", padding=10)
         frame.pack(fill="x", pady=10)

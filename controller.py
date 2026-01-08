@@ -1,3 +1,8 @@
+"""
+Main Module για το Library Management System
+Περιέχει όλες τις μεθόδους για την σωστή ροή της εφαρμογής και τον συντονισμό του GUI και της Βάσης Δεδομένων.
+"""
+
 import tkinter as tk
 from tkinter import ttk
 from model import LibraryModel
@@ -19,10 +24,7 @@ class LibraryController:
     # ================= ΟΘΟΝΗ ΕΙΣΟΔΟΥ ================= #
 
     def show_login_screen(self):
-        self.view.show_main_login(
-            on_member_click=self.prep_member_login,
-            on_admin_click=self.perform_admin_login
-        )
+        self.view.show_main_login(on_member_click=self.prep_member_login, on_admin_click=self.setup_admin_dashboard)
 
     def prep_member_login(self):
         self.view.show_specific_login("Σύνδεση Μέλους", "ID Μέλους:", self.perform_member_login, self.show_login_screen)
@@ -36,28 +38,21 @@ class LibraryController:
     # ================= ΕΛΕΓΧΟΣ ΕΙΣΟΔΟΥ ================= #
 
     def login_member(self, member_id):
+        """Μαζεύει τις πληροφορίες του Μέλους όταν κάνει login."""
         user_data = self.db.get_member_by_id(member_id)
         if user_data:
             self.current_user_id = member_id
             self.current_user_type = 'member'
             self.current_user_data = user_data
             self.db.calculate_overdue_fines()
-            return True, user_data
-        return False, None
-
-    def login_admin(self):
-        self.current_user_id = 9999
-        self.current_user_type = 'admin'
-        self.current_user_data = {
-            'Όνομα': 'Admin', 'Επίθετο': '', 'Βιβλιοθήκη': 'Όλες',
-            'ID_Βιβλιοθήκης': None, 'Email': None, 'ID': 9999, 'Ενεργός': 1
-        }
-        return True
+            return True
+        return False
 
     def perform_member_login(self, member_id_str):
+        """Login για το Μέλος."""
         try:
             m_id = int(member_id_str)
-            success, data = self.login_member(m_id)
+            success = self.login_member(m_id)
             if success:
                 self.setup_member_dashboard()
             else:
@@ -65,13 +60,10 @@ class LibraryController:
         except ValueError:
             self.view.show_message("Σφάλμα", "Εισάγετε έγκυρο αριθμό", True)
 
-    def perform_admin_login(self):
-        self.login_admin()
-        self.setup_admin_dashboard()
-
     # ================= DASHBOARDS SETUP ================= #
 
     def setup_member_dashboard(self):
+        """Setup του Μέλους με τα προσωπικά του στοιχεία και τις λειτουργίες του."""
         data = self.current_user_data
         full_name = f"{data['Όνομα']} {data['Επώνυμο']}"
         info_text = f"Email: {data['Email']}\nΒιβλιοθήκη Εγγραφής: {data['Βιβλιοθήκη']}\n\nΕπιλέξτε μια ενέργεια από το μενού παραπάνω.\nΕπιλέξτε ¨Περιήγηση Τεκμηρίων¨ για να δείτε όλα τα διαθέσιμα βιβλία."
@@ -90,7 +82,8 @@ class LibraryController:
         self.view.show_dashboard_layout(full_name, info_text, buttons, self.logout)
 
     def setup_admin_dashboard(self):
-        data = self.current_user_data
+        """Setup του Admin με τις λειτουργίες του."""
+        self.current_user_type = "admin"
         role = "Admin"
         name = "Administrator"
         
@@ -125,16 +118,17 @@ class LibraryController:
         self.view.build_filter_frame(content_frame, main_title, cat_names, languages, lib_names, self.handle_book_search)
         
         columns = ["ISBN", "Τίτλος", "Συγγραφέας", "Εκδότης", "Έτος", "Γλώσσα", "Κατηγορία"]
-        self.tree, _ = self.view.create_treeview(content_frame, columns, widths=[120, 250, 150, 120, 60, 80, 120])
+        self.tree = self.view.create_treeview(content_frame, columns, widths=[120, 250, 150, 120, 60, 80, 120])
 
-        self.view.build_details_button_frame(content_frame, self.current_user_type, self.show_book_details, self.show_add_book, self.show_document_management, self.show_update_book)        
+        self.view.build_details_button_frame(content_frame, self.current_user_type, self.show_book_details, self.show_add_book, self.show_document_management)        
 
         self.handle_book_search("Όλες", "Όλες", "Όλες", "")
 
     def handle_book_search(self, category, language, libraries, search_term):
+        """Αναζήτηση Τεκμηρίων με βάση τα φίλτρα όταν πατηθεί το κουμπί 'Εφαρμογή'."""
         for item in self.tree.get_children():
             self.tree.delete(item)
-            
+           
         books = self.db.browse_all_books(category, language, libraries, search_term)
         
         if not books:
@@ -144,6 +138,7 @@ class LibraryController:
             self.tree.insert("", "end", values=(book['ISBN'], book['Τίτλος'], book['Συγγραφέας'], book['Εκδότης'], book['Χρονολογία'], book['Γλώσσα'], book['Κατηγορία']))
 
     def create_book_reservation(self, isbn):
+        """Δημιουργία Κράτησης με βάση το ID του Μέλους και το ISBN."""
         success, message = self.db.create_reservation(self.current_user_id, isbn)
         if success:
             self.view.show_message("Επιτυχία", message)
@@ -151,6 +146,7 @@ class LibraryController:
             self.view.show_message("Σφάλμα", message, True)
 
     def show_book_details(self):
+        """Λεπτομέρειες τεκμηρίου, διαθέσιμα αντίτυπα και βιβλιοθήκες τους και κουμπί κρατήσεων."""
         selected = self.tree.selection()
         if not selected:
             self.view.show_message("Προσοχή", "Επιλέξτε ένα βιβλίο")
@@ -163,7 +159,7 @@ class LibraryController:
 
         copies = self.db.get_available_copies(isbn)
         
-        # Έλεγχος eBook
+        # Έλεγχος αν υπάρχει eBook
         ebook_callback = None
         if self.current_user_type == "member":
             ebook_id = self.db.check_ebook_availability(isbn)
@@ -178,7 +174,7 @@ class LibraryController:
         self.view.show_message("Επιτυχία" if success else "Σφάλμα", msg, not success)
 
     def show_add_book(self):
-        """Απλή φόρμα προσθήκης τεκμηρίου"""
+        """Απλή φόρμα προσθήκης τεκμηρίου."""
         content_frame = self.view.update_content_area()
         
         raw_cats = self.db.get_categories()
@@ -189,6 +185,7 @@ class LibraryController:
          self.add_lang_var) = self.view.build_add_book_frame(content_frame, cat_names, self.show_browse_books, self.add_book)
         
     def add_book(self):
+        """Προσθήκη του τεκμηρίου στη βάση."""
         entries = self.add_entries
         category_var = self.add_cat_var
         language_var = self.add_lang_var
@@ -224,12 +221,11 @@ class LibraryController:
                 entry.delete(0, tk.END)
             category_var.set("")
             language_var.set("")
-            entries["ISBN"].focus()
         else:
             self.view.show_message("Σφάλμα", msg, True)
 
     def show_document_management(self):
-        """Διαχείριση αντιτύπων τεκμηρίου"""
+        """Διαχείριση αντιτύπων τεκμηρίου."""
         selected = self.tree.selection()
         if not selected:
             self.view.show_message("Προσοχή", "Επιλέξτε ένα βιβλίο")
@@ -244,13 +240,13 @@ class LibraryController:
         mgmt_window = self.view.build_document_management_window(self.root, title, isbn, lib_names, self.add_copy, lambda: self.delete_copy(isbn))
 
         columns = ["ID", "Βιβλιοθήκη", "Κατάσταση", "Status"]
-        self.copy_tree, _ = self.view.create_treeview(mgmt_window, columns, widths=[80, 200, 150, 120])
+        self.copy_tree = self.view.create_treeview(mgmt_window, columns, widths=[80, 200, 150, 120])
 
         # Αρχική φόρτωση
         self.load_copies(isbn)
  
     def load_copies(self, isbn):
-        """Φόρτωση αντιτύπων"""
+        """Φόρτωση αντιτύπων του τεκμηρίου με συγκεκριμένο ISBN."""
         for item in self.copy_tree.get_children():
             self.copy_tree.delete(item)
         
@@ -260,6 +256,7 @@ class LibraryController:
             self.copy_tree.insert("", "end", values=(copy['ID_Αντιτύπου'], copy['Βιβλιοθήκη'], copy['Φυσική_Κατάσταση'], copy['Status']))
 
     def add_copy(self, isbn, library, condition):
+        """Προσθήκη αντιτύπου ενός τεκμηρίου σε μια συγκεκριμένη βιβλιοθήκη."""
         library_id = next((lib['ID_Βιβλιοθήκης'] for lib in self.raw_lib if lib['Όνομα'] == library), None)
         success, message = self.db.add_copy(isbn, library_id, condition)
         
@@ -287,12 +284,10 @@ class LibraryController:
             else:
                 self.view.show_message("Σφάλμα", message, True)
 
-    def show_update_book(self):
-        pass
-
     # ================= ΔΑΝΕΙΣΜΟΙ ================= #
 
     def show_my_loans(self):
+        """Εμφάνιση όλων των δανεισμών του Μέλους."""
         content_frame = self.view.update_content_area()
         
         loans = self.db.get_member_loans(self.current_user_id)
@@ -300,16 +295,16 @@ class LibraryController:
         self.view.build_loans_frame(content_frame, loans)
 
         columns = ["ID", "Τίτλος", "Έναρξη", "Λήξη", "Κατάσταση", "Τύπος"]
-        tree, _ = self.view.create_treeview(content_frame, columns)
+        tree = self.view.create_treeview(content_frame, columns)
         
         for loan in loans:
             tree.insert("", "end", values=(loan['ID_Δανεισμού'], loan['Τίτλος'], loan['Ημερομηνία_Έναρξης'], loan['Ημερομηνία_Λήξης'], loan['Κατάσταση'], loan['Τύπος']))
 
     def show_loan_management(self):
-        """Κύρια οθόνη διαχείρισης δανεισμών"""
+        """Κύρια οθόνη διαχείρισης δανεισμών."""
         content_frame = self.view.update_content_area()
         
-        # Build UI
+        # Δημιουργία UI
         self.search_entry, self.status_var = self.view.build_loan_management_frame(
             content_frame,
             on_search=self.handle_loan_search,
@@ -319,7 +314,7 @@ class LibraryController:
         
         # Treeview για δανεισμούς
         columns = ["ID", "Μέλος", "Τίτλος", "ISBN", "Έναρξη", "Λήξη", "Κατάσταση", "Τύπος"]
-        self.loan_tree, _ = self.view.create_treeview(
+        self.loan_tree = self.view.create_treeview(
             content_frame, 
             columns, 
             widths=[50, 150, 200, 100, 90, 90, 100, 120]
@@ -329,7 +324,7 @@ class LibraryController:
         self.handle_loan_search("", "")
 
     def handle_loan_search(self, search_term, status_filter):
-        """Αναζήτηση δανεισμών με φίλτρα"""
+        """Αναζήτηση δανεισμών με φίλτρα."""
         # Καθαρισμός
         for item in self.loan_tree.get_children():
             self.loan_tree.delete(item)
@@ -343,7 +338,6 @@ class LibraryController:
         
         # Εμφάνιση στο tree
         for loan in loans:
-            # Color coding
             tag = ""
             if loan['Κατάσταση'] == 'Εκπρόθεσμος':
                 tag = "overdue"
@@ -368,35 +362,30 @@ class LibraryController:
         self.loan_tree.tag_configure("interlibrary", foreground="blue")
 
     def show_new_loan_form(self):
-        """Άνοιγμα φόρμας νέου δανεισμού"""
-        libraries = self.db.get_all_libraries()
-        
+        """Άνοιγμα φόρμας νέου δανεισμού."""        
         popup_data = self.view.build_new_loan_form(
             self.root,
-            libraries,
             on_search_member=self.search_member_for_loan,
             on_search_copy=self.search_copies_for_loan,
-            on_create_loan=self.create_new_loan,
-            on_cancel=None
+            on_create_loan=self.create_new_loan
         )
         
         self.loan_popup = popup_data[0]
         self.member_info_label = popup_data[1]
         self.copy_tree = popup_data[2]
-        self.warning_label = popup_data[3]  # ΝΕΟ!
+        self.warning_label = popup_data[3]
         self.selected_member = None
         
         # Bind event για επιλογή αντιτύπου
         self.copy_tree.bind('<<TreeviewSelect>>', self.on_copy_selected)
 
     def on_copy_selected(self, event):
-        """Εμφάνιση ειδοποιήσεων όταν επιλέγεται αντίτυπο"""
+        """Εμφάνιση ειδοποιήσεων όταν επιλέγεται αντίτυπο."""
         selected = self.copy_tree.selection()
         if not selected or not self.selected_member:
             return
         
         item = self.copy_tree.item(selected[0])
-        copy_id = item['values'][0]
         isbn = item['values'][1]
         copy_library = item['values'][3]
         
@@ -436,11 +425,10 @@ class LibraryController:
             color = "orange" if any("ΠΡΟΣΟΧΗ" in w for w in warnings) else "blue"
             self.warning_label.config(text=warning_text, foreground=color)
         else:
-            self.warning_label.config(text="Καμία ειδοποίηση - Ο δανεισμός μπορεί να προχωρήσει κανονικά", 
-                                     foreground="green")
+            self.warning_label.config(text="Καμία ειδοποίηση - Ο δανεισμός μπορεί να προχωρήσει κανονικά", foreground="green")
 
     def search_member_for_loan(self, member_id_entry):
-        """Αναζήτηση μέλους για δανεισμό"""
+        """Αναζήτηση μέλους για δανεισμό."""
         try:
             member_id = int(member_id_entry.get().strip())
             member_data = self.db.get_member_by_id(member_id)
@@ -457,7 +445,7 @@ class LibraryController:
             self.view.show_message("Σφάλμα", "Εισάγετε έγκυρο ID μέλους", True)
 
     def search_copies_for_loan(self, search_term):
-        """Αναζήτηση διαθέσιμων αντιτύπων"""
+        """Αναζήτηση διαθέσιμων αντιτύπων."""
         # Καθαρισμός
         for item in self.copy_tree.get_children():
             self.copy_tree.delete(item)
@@ -491,8 +479,8 @@ class LibraryController:
         if not found_copies:
             self.view.show_message("Πληροφορία", "Δεν βρέθηκαν διαθέσιμα αντίτυπα")
 
-    def create_new_loan(self, popup, member_id_entry, copy_tree):
-        """Δημιουργία νέου δανεισμού"""
+    def create_new_loan(self, popup, copy_tree):
+        """Δημιουργία νέου δανεισμού."""
         # Έλεγχος μέλους
         if not self.selected_member:
             self.view.show_message("Προσοχή", "Επιλέξτε μέλος πρώτα")
@@ -517,13 +505,12 @@ class LibraryController:
         if reservations:
             first_member = reservations[0]['ID_Μέλους']
             if first_member != member_id:
-                warning = f"⚠️ ΠΡΟΣΟΧΗ: Υπάρχει κράτηση με προτεραιότητα 1 από το μέλος {first_member}.\n\nΕίστε σίγουροι ότι θέλετε να δανείσετε σε άλλο μέλος;"
+                warning = f"ΠΡΟΣΟΧΗ: Υπάρχει κράτηση με προτεραιότητα 1 από το μέλος {first_member}.\n\nΕίστε σίγουροι ότι θέλετε να δανείσετε σε άλλο μέλος;"
                 if not self.view.ask_confirmation("Προειδοποίηση Κράτησης", warning):
                     return
         
         # Δημιουργία δανεισμού
-        staff_library_id = self.current_user_data.get('ID_Βιβλιοθήκης', 1)  # Default 1 για admin
-        success, message = self.db.create_loan(member_id, copy_id, staff_library_id)
+        success, message = self.db.create_loan(member_id, copy_id)
         
         if success:
             self.view.show_message("Επιτυχία", message)
@@ -534,6 +521,7 @@ class LibraryController:
             self.view.show_message("Σφάλμα", message, True)
 
     def handle_book_return(self):
+        """Επιστροφή αντιτύπου."""
         selected = self.loan_tree.selection()
         if not selected:
             self.view.show_message("Προσοχή", "Παρακαλώ επιλέξτε δανεισμό")
@@ -553,15 +541,14 @@ class LibraryController:
             if success:
                 self.view.show_message("Επιτυχία", message)
                 # Πρόσθεσε μικρή καθυστέρηση πριν το refresh!
-                self.root.after(100, lambda: self.handle_loan_search(
-                    self.search_entry.get(), self.status_var.get()))
+                self.root.after(100, lambda: self.handle_loan_search(self.search_entry.get(), self.status_var.get()))
             else:
                 self.view.show_message("Σφάλμα", message, True)
 
     # ================= ΚΡΑΤΗΣΕΙΣ ================= #
 
     def show_my_reservations(self):
-        """Εμφάνιση κρατήσεων μέλους"""
+        """Εμφάνιση κρατήσεων μέλους."""
         content_frame = self.view.update_content_area()
         
         reservations = self.db.get_member_reservations(self.current_user_id)
@@ -569,12 +556,13 @@ class LibraryController:
         self.view.build_reservations_frame(content_frame, reservations, self.cancel_reservation)
 
         columns = ["ID", "Τίτλος", "Συγγραφέας", "Προτεραιότητα", "Ημερομηνία"]
-        self.tree, _ = self.view.create_treeview(content_frame, columns)
+        self.tree = self.view.create_treeview(content_frame, columns)
         
         for res in reservations:
             self.tree.insert("", "end", values=(res['ID_Κράτησης'], res['Τίτλος'], res['Συγγραφέας'] or "-", res['Προτεραιότητα'], res['Ημερομηνία_Κράτησης']))
         
     def cancel_reservation(self):
+        """Ακύρωση κράτησης Μέλους."""
         selected = self.tree.selection()
         if not selected:
             self.view.show_message("Προσοχή", "Επιλέξτε μια κράτηση για ακύρωση")
@@ -599,7 +587,7 @@ class LibraryController:
     # ================= ΠΡΟΣΤΙΜΑ ================= #
 
     def show_my_fines(self):
-        """Εμφάνιση προστίμων μέλους"""
+        """Εμφάνιση προστίμων μέλους."""
         content_frame = self.view.update_content_area()
 
         fines = self.db.get_member_fines(self.current_user_id)
@@ -607,6 +595,7 @@ class LibraryController:
         self.view.build_fines_frame(content_frame, fines)
 
     def show_fine_management(self):
+        """Εμφάνιση διαχείρισης δανεισμών από Admin."""
         content_frame = self.view.update_content_area()
         
         self.search_entry, self.fine_status_var = self.view.build_fine_management_frame(
@@ -617,12 +606,13 @@ class LibraryController:
         )
         
         columns = ["ID Προστίμου", "Μέλος", "ID Μέλους", "Τίτλος", "Ποσό (€)", "Ημ. Επιβολής", "Κατάσταση"]
-        self.fine_tree, _ = self.view.create_treeview(
+        self.fine_tree = self.view.create_treeview(
             content_frame, columns, widths=[80, 150, 80, 200, 80, 100, 100])
         
         self.handle_fine_search("", "Όλα")
 
     def handle_fine_search(self, search_term, status_filter):
+        """Αναζήτηση Δανεισμών από Admin."""
         for item in self.fine_tree.get_children():
             self.fine_tree.delete(item)
         
@@ -644,6 +634,7 @@ class LibraryController:
             ))
 
     def show_impose_fine_form(self):
+        """Επιβολή προστίμου."""
         popup = tk.Toplevel(self.root)
         popup.title("Επιβολή Προστίμου")
         popup.geometry("400x250")
@@ -691,9 +682,9 @@ class LibraryController:
                 self.view.show_message("Σφάλμα", "Μη έγκυρα δεδομένα", True)
         
         ttk.Button(button_frame, text="Επιβολή", command=impose).pack(side="left", padx=10)
-        ttk.Button(button_frame, text="Ακύρωση", command=popup.destroy).pack(side="left", padx=10)
 
     def update_fine_status(self):
+        """Ανανέωση κατάστασης προστίμου."""
         selected = self.fine_tree.selection()
         if not selected:
             self.view.show_message("Προσοχή", "Παρακαλώ επιλέξτε πρόστιμο")
@@ -719,7 +710,7 @@ class LibraryController:
     # ================= ΑΞΙΟΛΟΓΗΣΕΙΣ ================= #
 
     def show_my_reviews(self):
-        """Εμφάνιση αξιολογήσεων μέλους"""
+        """Εμφάνιση αξιολογήσεων μέλους."""
         content_frame = self.view.update_content_area()
         
         self.ratings = self.db.get_member_ratings(self.current_user_id)
@@ -727,7 +718,7 @@ class LibraryController:
         self.details_text = self.view.build_reviews_frame(content_frame, self.ratings, self.show_details)
 
         columns = ["Τίτλος", "Συγγραφέας", "Βαθμολογία", "Ημερομηνία"]
-        self.tree, _ = self.view.create_treeview(content_frame, columns, widths=[300, 200, 120, 120])
+        self.tree = self.view.create_treeview(content_frame, columns, widths=[300, 200, 120, 120])
         
         for rating in self.ratings:
             stars = "⭐" * rating['Βαθμολογία']
@@ -736,11 +727,13 @@ class LibraryController:
         # Στατιστικά
         total = len(self.ratings)
         if total > 0: avg_rating = sum(r['Βαθμολογία'] for r in self.ratings) / total
+        else: avg_rating = 0
         
         stats_text = f"Έχετε αξιολογήσει {total} βιβλίο/α - Μέση βαθμολογία: {avg_rating:.1f}⭐"
         ttk.Label(content_frame, text=stats_text, font=("Arial", 10, "bold"), foreground="blue").pack(pady=10)
 
     def show_details(self):
+        """Εμφάνιση λεπτομερειών αξιολόγησης Μέλους."""
         selected = self.tree.selection()
         if not selected:
             self.view.show_message("Προσοχή", "Επιλέξτε μια αξιολόγηση για λεπτομέρειες.")
@@ -756,14 +749,18 @@ class LibraryController:
     # ================= ΑΞΙΟΛΟΓΗΣΗ ΒΙΒΛΙΟΥ ================= #
 
     def show_book_rating(self):
-        """Οθόνη αξιολόγησης βιβλίου"""
+        """Οθόνη αξιολόγησης βιβλίου."""
         content_frame = self.view.update_content_area()
         
         books = self.db.get_member_loan_history_books(self.current_user_id)
-        
-        self.book_combo, self.rating_var, self.review_text = self.view.build_book_rating_frame(content_frame, books, lambda: self.submit_rating(books))
-        
+         
+        result = self.view.build_book_rating_frame(content_frame, books, lambda: self.submit_rating(books))
+
+        if result: self.book_combo, self.rating_var, self.review_text = result
+        else: self.book_combo, self.rating_var, self.review_text = None, None, None
+
     def submit_rating(self, books):
+        """Υποβολή καινούργιας αξιολόγησης τεκμηρίου από Μέλος."""
         selected_index = self.book_combo.current()
         if selected_index < 0:
             self.view.show_message("Προσοχή", "Επιλέξτε ένα βιβλίο")
@@ -783,11 +780,11 @@ class LibraryController:
             self.show_book_rating()
         else:
             self.view.show_message("Σφάλμα", message, True)
-    
+
     # ================= ΚΡΑΤΗΣΗ ΧΩΡΟΥ ================= #
 
     def show_space_reservation(self):
-        """Οθόνη κράτησης χώρου μελέτης"""
+        """Οθόνη κράτησης χώρου μελέτης."""
         content_frame = self.view.update_content_area()
     
         (self.my_reservations_tab,
@@ -795,10 +792,10 @@ class LibraryController:
          self.date_entry, self.time_entry) = self.view.build_space_reservation_frame(content_frame, self.search_spaces, self.make_reservation, self.cancel_selected_reservation)
         
         columns=["ID", "Χώρος", "Χωρητικότητα", "Χαρακτηριστικά", "Βιβλιοθήκη"]
-        self.tree, _ = self.view.create_treeview(content_frame, columns, widths=[50, 200, 100, 200, 150])
+        self.tree = self.view.create_treeview(content_frame, columns, widths=[50, 200, 100, 200, 150])
 
         columns = ["Χώρος", "Βιβλιοθήκη", "Ημερομηνία", "Ώρες", "Χαρακτηριστικά"]
-        self.my_res_tree, _ = self.view.create_treeview(self.my_reservations_tab, columns, widths=[200, 100, 200, 150])
+        self.my_res_tree = self.view.create_treeview(self.my_reservations_tab, columns, widths=[200, 100, 200, 150])
 
         self.load_my_reservations()
 
@@ -806,6 +803,7 @@ class LibraryController:
         self.search_spaces()
 
     def search_spaces(self):
+        """Αναζήτηση διαθέσιμων χώρων μελέτης από Μέλος."""
         has_computers = self.has_computers_var.get()
         has_projector = self.has_projector_var.get()
         has_board = self.has_board_var.get()
@@ -840,8 +838,9 @@ class LibraryController:
             if space.get('Πρίζες_Φόρτισης'): features.append("ΠΖ")
 
             self.tree.insert("", "end", values=(space['ID_Χώρου'], space['Όνομα_Χώρου'], space['Χωρητικότητα'], ", ".join(features) if features else "-", space['Βιβλιοθήκη']))
-        
+
     def make_reservation(self):
+        """Υποβολή καινούργιας κράτησης χώρου."""
         selected = self.tree.selection()
         if not selected:
             self.view.show_message("Προσοχή", "Επιλέξτε έναν χώρο")
@@ -864,6 +863,7 @@ class LibraryController:
             self.view.show_message("Σφάλμα", message, True)
         
     def load_my_reservations(self):
+        """Εμφάνιση κρατήσεων."""
         for item in self.my_res_tree.get_children():
             self.my_res_tree.delete(item)
         
@@ -891,6 +891,7 @@ class LibraryController:
             ))
         
     def cancel_selected_reservation(self):
+        """Ακύρωση κράτησης χώρου."""
         selected = self.my_res_tree.selection()
         if not selected:
             self.view.show_message("Προσοχή", "Επιλέξτε μια κράτηση για ακύρωση")
@@ -918,7 +919,7 @@ class LibraryController:
     # ================= ΣΤΑΤΙΣΤΙΚΑ ================= #
 
     def show_statistics(self):
-        """Εμφάνιση στατιστικών βιβλιοθήκης"""
+        """Εμφάνιση στατιστικών βιβλιοθήκης."""
         content_frame = self.view.update_content_area()
 
         popular_books = self.db.get_popular_books(10)
@@ -930,7 +931,7 @@ class LibraryController:
         popular_tab, rated_tab, category_tab = self.view.build_statistics_frame(content_frame, popular_books, top_rated, categories)
         
         columns = ["#", "Τίτλος", "Συγγραφέας", "Δανεισμοί", "Βαθμολογία"]
-        tree, _ = self.view.create_treeview(popular_tab, columns, widths=[50, 300, 150, 100, 120])
+        tree = self.view.create_treeview(popular_tab, columns, widths=[50, 300, 150, 100, 120])
 
         for idx, book in enumerate(popular_books, 1):
             avg_rating = book['ΜέσηΑξιολόγηση']
@@ -939,13 +940,13 @@ class LibraryController:
             tree.insert("", "end", values=(idx, book['Τίτλος'], book['Συγγραφέας'] or "-", book['ΣυνολικοίΔανεισμοί'], rating_display))
 
         columns = ["#", "Τίτλος", "Συγγραφέας", "Βαθμολογία", "Αξιολογήσεις"]
-        tree2, _ = self.view.create_treeview(rated_tab, columns, widths=[50, 300, 150, 100, 120])
+        tree2 = self.view.create_treeview(rated_tab, columns, widths=[50, 300, 150, 100, 120])
 
         for idx, book in enumerate(top_rated, 1):
             tree2.insert("", "end", values=(idx, book['Τίτλος'], book['Συγγραφέας'] or "-", f"{book['ΜέσηΑξιολόγηση']:.2f}/5.0", book['ΑριθμόςΑξιολογήσεων']))
             
         columns = ["Κατηγορία", "Τεκμήρια", "Αντίτυπα"]
-        tree3, _ = self.view.create_treeview(category_tab, columns, widths=[300, 150, 150])
+        tree3 = self.view.create_treeview(category_tab, columns, widths=[300, 150, 150])
 
         for cat in categories:
             tree3.insert("", "end", values=(cat['Κατηγορία'], cat['ΑριθμόςΤεκμηρίων'], cat['ΣύνολοΑντιτύπων']))
@@ -953,6 +954,7 @@ class LibraryController:
     # ================= ΔΙΑΧΕΙΡΙΣΗ ΒΙΒΛΙΟΘΗΚΩΝ ================= #
 
     def show_browse_libraries(self):
+        """Οθόνη διαχείρισης βιβλιοθηκών."""
         content_frame = self.view.update_content_area()
 
         lib_types = self.db.get_libraries_type()
@@ -964,11 +966,12 @@ class LibraryController:
         self.view.build_lib_filter_frame(content_frame, lib_types, lib_cities, lib_couriers, self.handle_lib_search, self.delete_lib, self.update_lib, self.add_lib)
 
         columns = ["ID Βιβλιοθήκης", "Όνομα", "Πόλη", "Είδος", "Μεταφορέας"]
-        self.tree, _ = self.view.create_treeview(content_frame, columns, widths=[120, 250, 150, 120, 60])
+        self.tree = self.view.create_treeview(content_frame, columns, widths=[120, 250, 150, 120, 60])
 
         self.handle_lib_search("Όλες", "Όλες", "Όλοι", "")
 
     def handle_lib_search(self, types, cities, couriers, search_term):
+        """Αναζήτηση συγκεκριμένης βιβλιοθήκης."""
         for item in self.tree.get_children():
             self.tree.delete(item)
             
@@ -981,11 +984,13 @@ class LibraryController:
             self.tree.insert("", "end", values=(library['ID_Βιβλιοθήκης'], library['Όνομα'], library['Πόλη'], library['Είδος_Βιβλιοθήκης'], library['Μεταφορέας']))
 
     def add_lib(self):
+        """Οθόνη προσθήκης Βιβλιοθήκης."""
         couriers = self.db.get_couriers()
         lib_types = self.db.get_libraries_type()
         self.view.build_library_form(self.root, None, couriers, lib_types, self.save_lib)
 
     def update_lib(self):
+        """Οθόνη ανανέωσης στοιχείων βιβλιοθήκης."""
         sel = self.tree.selection()
         if not sel: return self.view.show_message("Προσοχή", "Επιλέξτε βιβλιοθήκη")
         
@@ -998,6 +1003,7 @@ class LibraryController:
         self.view.build_library_form(self.root, lib_data, couriers, lib_types, lambda p, e: self.save_lib(p, e, lib_id))
 
     def save_lib(self, popup, entries, lib_id=None):
+        """Καταχώρηση νέων στοιχείων βιβλιοθήκης."""
         data = {
             'Όνομα': entries['Όνομα'].get(),
             'Οδός': entries['Οδός'].get(),
@@ -1022,6 +1028,7 @@ class LibraryController:
             self.view.show_message("Σφάλμα", msg, True)
 
     def delete_lib(self):
+        """Διαγραφή βιβλιοθήκης."""
         sel = self.tree.selection()
         if not sel: return
         lib_id = self.tree.item(sel[0])['values'][0]
@@ -1033,24 +1040,28 @@ class LibraryController:
     # ================= ΔΙΑΧΕΙΡΙΣΗ ΜΕΛΩΝ ================= #
 
     def show_browse_members(self):
+        """Οθόνη διαχείρισης μελών από Admin."""
         content_frame = self.view.update_content_area()
         self.view.build_generic_filter_frame(content_frame, "Διαχείριση Μελών", self.handle_member_search, self.add_member, self.update_member, self.delete_member)
         
         cols = ["ID", "Όνομα", "Επώνυμο", "Email", "Βιβλιοθήκη"]
-        self.tree, _ = self.view.create_treeview(content_frame, cols, widths=[50, 150, 150, 200, 150])
+        self.tree = self.view.create_treeview(content_frame, cols, widths=[50, 150, 150, 200, 150])
         self.handle_member_search("")
 
     def handle_member_search(self, term):
+        """Αναζήτηση συγκεκριμένου Μέλους."""
         members = self.db.browse_members(term)
         for i in self.tree.get_children(): self.tree.delete(i)
         for m in members:
             self.tree.insert("", "end", values=(m['ID_Μέλους'], m['Όνομα'], m['Επώνυμο'], m['Email'], m['Βιβλιοθήκη']))
 
     def add_member(self):
+        """Οθόνη προσθήκης Μέλους."""
         libs = self.db.get_all_libraries()
         self.view.build_member_form(self.root, None, libs, self.save_member)
 
     def update_member(self):
+        """Οθόνη ανανέωσης στοιχείων Μέλους."""
         selected = self.tree.selection()
         if not selected:
             self.view.show_message("Προσοχή", "Επιλέξτε ένα μέλος για επεξεργασία.")
@@ -1063,6 +1074,7 @@ class LibraryController:
         self.view.build_member_form(self.root, data, libs, lambda p, e: self.save_member(p, e, m_id))
 
     def save_member(self, popup, entries, m_id=None):
+        """Καταχώρηση καινούργιων στοιχείων Μέλους."""
         selected_lib_name = entries['Βιβλιοθήκη'].get()
         lib_id = None
         
@@ -1107,6 +1119,7 @@ class LibraryController:
             self.view.show_message("Σφάλμα", msg, True)
 
     def delete_member(self):
+        """Διαγραφή Μέλους."""
         sel = self.tree.selection()
         if not sel: return
         m_id = self.tree.item(sel[0])['values'][0]
@@ -1117,24 +1130,28 @@ class LibraryController:
     # ================= ΔΙΑΧΕΙΡΙΣΗ ΠΡΟΣΩΠΙΚΟΥ ================= #
 
     def show_browse_staff(self):
+        """Οθόνη διαχείρισης προσωπικού από Admin."""
         content_frame = self.view.update_content_area()
         self.view.build_generic_filter_frame(content_frame, "Διαχείριση Προσωπικού", self.handle_staff_search, self.add_staff, self.update_staff, self.delete_staff)
         
         cols = ["ID", "Όνομα", "Επώνυμο", "Θέση", "Βιβλιοθήκη", "Κατάσταση"]
-        self.tree, _ = self.view.create_treeview(content_frame, cols)
+        self.tree = self.view.create_treeview(content_frame, cols)
         self.handle_staff_search("")
 
     def handle_staff_search(self, term):
+        """Αναζήτηση συγκεκριμένου προσωπικού."""
         staff = self.db.browse_staff(term)
         for i in self.tree.get_children(): self.tree.delete(i)
         for s in staff:
             self.tree.insert("", "end", values=(s['ID_Προσωπικού'], s['Όνομα'], s['Επώνυμο'], s['Θέση'], s['Βιβλιοθήκη'], s['Κατάσταση']))
 
     def add_staff(self):
+        """Οθόνη προσθήκης προσωπικού."""
         libs = self.db.get_all_libraries()
         self.view.build_staff_form(self.root, None, libs, self.save_staff)
 
     def update_staff(self):
+        """Οθόνη ανανέωσης στοιχείων προσωπικού."""
         sel = self.tree.selection()
         if not sel: 
             self.view.show_message("Προσοχή", "Επιλέξτε μέλος προσωπικού")
@@ -1152,6 +1169,7 @@ class LibraryController:
         self.view.build_staff_form(self.root, data, libs, lambda p, e: self.save_staff(p, e, s_id))
 
     def save_staff(self, popup, entries, s_id=None):
+        """Καταχώρηση καινούργιων στοιχείων προσωπικού."""
         selected_lib_name = entries['Βιβλιοθήκη'].get().strip()
         lib_id = None
         
@@ -1193,6 +1211,7 @@ class LibraryController:
             self.view.show_message("Σφάλμα", msg, True)
     
     def delete_staff(self):
+        """Διαγραφή προσωπικού."""
         sel = self.tree.selection()
         if not sel: return
         s_id = self.tree.item(sel[0])['values'][0]
